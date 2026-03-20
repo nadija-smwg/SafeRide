@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_widgets.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class DriverRegisterScreen extends StatefulWidget {
   const DriverRegisterScreen({super.key});
@@ -21,64 +22,55 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
   bool isLoading = false;
 
   // 2. Updated function to send the SMS instead of creating an email user
-  Future<void> sendOtp() async {
-    // Quick validation checks
-    if (phoneController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter your phone number.")),
-      );
-      return;
-    }
+// 1. Replace the old sendOtp function with this:
+Future<void> registerWithEmail() async {
+  // Basic Validations
+  if (emailController.text.trim().isEmpty || passwordController.text.trim().isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Please fill in all fields.")),
+    );
+    return;
+  }
 
-    if (passwordController.text.trim() !=
-        confirmPasswordController.text.trim()) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Passwords do not match!")));
-      return;
-    }
+  if (passwordController.text != confirmPasswordController.text) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Passwords do not match!")),
+    );
+    return;
+  }
 
-    setState(() {
-      isLoading = true; // Start loading spinner
+  setState(() {
+    isLoading = true;
+  });
+
+  try {
+    // 2. Create the user in Firebase Auth
+    UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      email: emailController.text.trim(),
+      password: passwordController.text.trim(),
+    );
+
+    // 3. Save the Driver details to Firestore (The Database)
+    await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
+      'username': usernameController.text.trim(),
+      'email': emailController.text.trim(),
+      'role': 'Driver', // Hardcoded as Driver for this screen
+      'uid': userCredential.user!.uid,
+      'createdAt': DateTime.now(),
     });
 
-    // 3. Tell Firebase to send the text message!
-    await FirebaseAuth.instance.verifyPhoneNumber(
-      phoneNumber: phoneController.text.trim(), // MUST include country code!
-      verificationCompleted: (PhoneAuthCredential credential) {
-        // Android sometimes auto-reads the SMS and logs in instantly.
-      },
-      verificationFailed: (FirebaseAuthException e) {
-        // If the number is formatted wrong or Firebase blocks it
-        if (mounted) {
-          setState(() {
-            isLoading = false;
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                e.message ?? "Verification failed. Please try again.",
-              ),
-            ),
-          );
-        }
-      },
-      codeSent: (String verificationId, int? resendToken) {
-        // 4. Success! The SMS is flying through the air. Navigate to OTP screen.
-        if (mounted) {
-          setState(() {
-            isLoading = false;
-          });
-          Navigator.pushNamed(
-            context,
-            '/RegisterDriverotp',
-            arguments: verificationId, // Pass the secret ID to the next screen!
-          );
-        }
-      },
-      codeAutoRetrievalTimeout: (String verificationId) {},
+    if (mounted) {
+      setState(() => isLoading = false);
+      // 4. Success! Go straight to Driver Home (No OTP needed)
+      Navigator.pushNamed(context, '/Driverhome');
+    }
+  } on FirebaseAuthException catch (e) {
+    setState(() => isLoading = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(e.message ?? "An error occurred")),
     );
   }
+}  
 
   @override
   void dispose() {
@@ -155,7 +147,7 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
                 child: ElevatedButton(
                   onPressed: isLoading
                       ? null
-                      : sendOtp, // Connects to the new SMS function
+                      : registerWithEmail, // Connects to the new SMS function
                   child: isLoading
                       ? const SizedBox(
                           height: 20,

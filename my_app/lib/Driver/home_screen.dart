@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart'; // For Clipboard
 // Map & Location Imports
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
-import 'package:geolocator/geolocator.dart'; // ADDED: Geolocator for permissions
+import 'package:geolocator/geolocator.dart';
 
 class DriverHomeScreen extends StatefulWidget {
   const DriverHomeScreen({super.key});
@@ -14,12 +15,18 @@ class DriverHomeScreen extends StatefulWidget {
 }
 
 class _DriverHomeScreenState extends State<DriverHomeScreen> {
-  // Variables to hold the state of our toggles and checkboxes
-  bool isDriverMode = true;
-  bool isAmalPresent = true;
-  bool isSamanPresent = false;
+  // 1. State Variables
+  bool isDriverMode = true; // Controls Live Tracking
+  bool isStudentsExpanded = true;
+  bool isScheduleExpanded = false;
 
-  // ADDED: Request location permission as soon as the screen opens
+  // Dummy Student Data
+  List<Map<String, dynamic>> students = [
+    {'name': 'Amal', 'morning': true, 'afternoon': false},
+    {'name': 'Saman', 'morning': true, 'afternoon': true},
+    {'name': 'Kamal', 'morning': false, 'afternoon': true},
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -33,28 +40,38 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     }
   }
 
-  // Reusable function to build the thick grey dividers from your mockup
+  // Show a popup for the Invitation Link
+  void _showInvitePopup() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Invite Student"),
+        content: const Text("Copy this link to invite a student to your bus: \nsaferide.app/invite/bus123"),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Clipboard.setData(const ClipboardData(text: "saferide.app/invite/bus123"));
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Link copied!")));
+            },
+            child: const Text("Copy Link"),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDivider() {
     return Container(height: 1.5, color: Colors.grey.shade300);
   }
 
-  // Reusable function to build the rows (Driver Mode, Attendance, Schedule, etc.)
   Widget _buildListRow({required String title, required Widget trailing}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              fontStyle:
-                  FontStyle.italic, // Matches the slanted text in your mockup
-              color: Colors.black87,
-            ),
-          ),
+          Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic)),
           trailing,
         ],
       ),
@@ -66,244 +83,129 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF00C2E0), // Cyan theme color
+        backgroundColor: const Color(0xFF00C2E0),
         elevation: 0,
-        // Custom Back Button mimicking your design
-        leading: Padding(
-          padding: const EdgeInsets.all(10.0),
-          child: GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.arrow_back_ios_new,
-                color: Colors.black,
-                size: 18,
-              ),
-            ),
-          ),
-        ),
-        // Title row with name and profile picture
         title: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            const Text(
-              'Driver Sanath',
-              style: TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
+            const Text('Driver Sanath', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(width: 10),
-            // Profile picture that logs out when tapped!
-            GestureDetector(
-              onTap: () async {
-                // 1. Wait for Firebase to sign out
-                await FirebaseAuth.instance.signOut();
-
-                // 2. Safely check if the screen is still active
-                if (!context.mounted) return;
-
-                // 3. Navigate back to Welcome screen
-                Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  '/Driverwelcome',
-                  (route) => false,
-                );
-              },
-              child: const CircleAvatar(
-                radius: 18,
-                backgroundColor: Colors.white,
-                backgroundImage: NetworkImage(
-                  'https://cdn-icons-png.flaticon.com/512/3135/3135715.png', // Generic avatar URL
-                ),
-              ),
+            const CircleAvatar(
+              radius: 18,
+              backgroundImage: NetworkImage('https://cdn-icons-png.flaticon.com/512/3135/3135715.png'),
             ),
           ],
         ),
       ),
       body: Column(
         children: [
-          // 1. Driver Mode
+          // 1. Driver Mode (Controls Live Tracking)
           _buildListRow(
             title: 'Driver Mode',
             trailing: Switch(
               value: isDriverMode,
-              activeThumbColor: Colors.white,
               activeTrackColor: Colors.greenAccent.shade400,
-              inactiveThumbColor: Colors.white,
-              inactiveTrackColor: Colors.grey.shade400,
-              onChanged: (val) {
-                setState(() => isDriverMode = val);
-              },
+              onChanged: (val) => setState(() => isDriverMode = val),
             ),
           ),
           _buildDivider(),
 
-          // 2. Attendance
-          _buildListRow(
-            title: 'Attendance',
-            trailing: const Icon(
-              Icons.qr_code_scanner,
-              size: 28,
-              color: Colors.black87,
+          // 2. Attendance (QR Scanner Placeholder)
+          InkWell(
+            onTap: () {
+              // This is where you'd trigger the Camera Scanner
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Opening QR Scanner...")));
+            },
+            child: _buildListRow(
+              title: 'Attendance',
+              trailing: const Icon(Icons.qr_code_scanner, size: 28, color: Colors.black87),
             ),
           ),
           _buildDivider(),
 
-          // 3. Students Header
-          _buildListRow(
-            title: 'Students',
-            trailing: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade400),
-                    borderRadius: BorderRadius.circular(4),
+          // 3. Students List
+          InkWell(
+            onTap: () => setState(() => isStudentsExpanded = !isStudentsExpanded),
+            child: _buildListRow(
+              title: 'Students',
+              trailing: Row(
+                children: [
+                  Icon(isStudentsExpanded ? Icons.keyboard_arrow_down : Icons.arrow_back_ios_new, size: 16),
+                  const SizedBox(width: 12),
+                  IconButton(
+                    onPressed: _showInvitePopup,
+                    icon: const Icon(Icons.add_circle, size: 26, color: Colors.black),
                   ),
-                  child: const Icon(
-                    Icons.arrow_back_ios_new,
-                    size: 14,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Icon(Icons.add_circle, size: 26, color: Colors.black),
-              ],
+                ],
+              ),
             ),
           ),
-
-          // 4. Student Checkboxes
-          CheckboxListTile(
-            title: const Text(
-              'Amal',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            value: isAmalPresent,
-            onChanged: (val) => setState(() => isAmalPresent = val ?? false),
-            controlAffinity: ListTileControlAffinity.leading,
-            activeColor: Colors.grey.shade800,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
-            dense: true,
-          ),
-          CheckboxListTile(
-            title: const Text(
-              'Saman',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            value: isSamanPresent,
-            onChanged: (val) => setState(() => isSamanPresent = val ?? false),
-            controlAffinity: ListTileControlAffinity.leading,
-            activeColor: Colors.grey.shade800,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
-            dense: true,
-          ),
+          if (isStudentsExpanded)
+            ...students.map((s) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 4.0),
+              child: Row(children: [
+                const Icon(Icons.person, size: 16, color: Colors.grey),
+                const SizedBox(width: 8),
+                Text(s['name'], style: const TextStyle(fontWeight: FontWeight.w500)),
+              ]),
+            )).toList(),
           _buildDivider(),
 
-          // 5. Schedule
-          _buildListRow(
-            title: 'Schedule',
-            trailing: Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade400),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: const Icon(
-                Icons.keyboard_arrow_down,
-                size: 16,
-                color: Colors.black87,
-              ),
+          // 4. Schedule Table
+          InkWell(
+            onTap: () => setState(() => isScheduleExpanded = !isScheduleExpanded),
+            child: _buildListRow(
+              title: 'Schedule',
+              trailing: Icon(isScheduleExpanded ? Icons.keyboard_arrow_down : Icons.arrow_back_ios_new, size: 16),
             ),
           ),
+          if (isScheduleExpanded)
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Table(
+                border: TableBorder.all(color: Colors.grey.shade300),
+                children: [
+                  const TableRow(children: [
+                    TableCell(child: Center(child: Text('Student', style: TextStyle(fontWeight: FontWeight.bold)))),
+                    TableCell(child: Center(child: Text('Morning', style: TextStyle(fontWeight: FontWeight.bold)))),
+                    TableCell(child: Center(child: Text('Afternoon', style: TextStyle(fontWeight: FontWeight.bold)))),
+                  ]),
+                  ...students.map((s) => TableRow(children: [
+                    TableCell(child: Center(child: Text(s['name']))),
+                    TableCell(child: Icon(s['morning'] ? Icons.check_circle : Icons.cancel, color: s['morning'] ? Colors.green : Colors.red, size: 20)),
+                    TableCell(child: Icon(s['afternoon'] ? Icons.check_circle : Icons.cancel, color: s['afternoon'] ? Colors.green : Colors.red, size: 20)),
+                  ])).toList(),
+                ],
+              ),
+            ),
           _buildDivider(),
 
-          // 6. Map Header
-          _buildListRow(
-            title: 'Map',
-            trailing: Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade400),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: const Icon(
-                Icons.arrow_back_ios_new,
-                size: 14,
-                color: Colors.black87,
-              ),
-            ),
-          ),
-
-          // 7. Live Map Area
+          // 5. Map (Always Visible)
           Expanded(
             child: FlutterMap(
               options: const MapOptions(
-                initialCenter: LatLng(6.9271, 79.8612), // Default to Colombo
+                initialCenter: LatLng(6.9271, 79.8612),
                 initialZoom: 15.0,
               ),
               children: [
                 TileLayer(
-                  urlTemplate:
-                      'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+                  urlTemplate: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
                   subdomains: const ['a', 'b', 'c', 'd'],
-                  userAgentPackageName: 'com.codex.saferide',
-                  retinaMode:
-                      true, // IMPORTANT: This forces high-resolution images to stop the blurriness!
                 ),
-                PolylineLayer(
-                  polylines: [
-                    Polyline(
-                      points: [
-                        // Example coordinates drawing a short line in Colombo
-                        const LatLng(6.9271, 79.8612),
-                        const LatLng(6.9285, 79.8625),
-                        const LatLng(6.9300, 79.8640),
-                      ],
-                      color: Colors.blueAccent, // That classic Google Maps blue
-                      strokeWidth: 6.0, // Make it thick!
-                      strokeCap:
-                          StrokeCap.round, // Rounds the edges of the line
-                    ),
-                  ],
-                ),
-                // UPDATED: School Bus Live Location Marker
+                // Live Location Layer - Only "Follows" and "Rotates" if Driver Mode is ON
                 CurrentLocationLayer(
-                  alignPositionOnUpdate: AlignOnUpdate.always,
-                  alignDirectionOnUpdate:
-                      AlignOnUpdate.always, // Rotates bus based on movement
+                  alignPositionOnUpdate: isDriverMode ? AlignOnUpdate.always : AlignOnUpdate.never,
+                  alignDirectionOnUpdate: isDriverMode ? AlignOnUpdate.always : AlignOnUpdate.never,
                   style: const LocationMarkerStyle(
                     marker: DefaultLocationMarker(
-                      color: Colors.amber, // Classic school bus yellow
-                      child: Icon(
-                        Icons.directions_bus, // Bus icon instead of an arrow
-                        color: Colors.black,
-                        size: 20,
-                      ),
+                      color: Colors.amber,
+                      child: Icon(Icons.directions_bus, color: Colors.black, size: 20),
                     ),
                     markerSize: Size(40, 40),
                     markerDirection: MarkerDirection.heading,
                   ),
                 ),
               ],
-            ),
-          ),
-
-          // 8. Bottom Footer Text
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12.0),
-            child: Text(
-              'Protect your Child!',
-              style: TextStyle(
-                color: Color(0xFF00C2E0),
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
             ),
           ),
         ],
