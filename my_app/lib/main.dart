@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'screens/role_selection_screen.dart';
 import 'Driver/welcome_screen.dart';
@@ -24,8 +25,6 @@ import 'Passenger/create_password_screen.dart';
 
 import 'Passenger/home_screen.dart';
 import 'Driver/home_screen.dart';
-
-import 'package:firebase_core/firebase_core.dart';
 
 void main() async {
   // 1. Ensure Flutter is fully loaded before we start Firebase
