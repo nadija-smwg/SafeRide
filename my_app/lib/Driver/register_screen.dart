@@ -12,8 +12,6 @@ class DriverRegisterScreen extends StatefulWidget {
 
 class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
   final TextEditingController usernameController = TextEditingController();
-  final TextEditingController phoneController =
-      TextEditingController(); // 1. Added Phone Controller
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
@@ -75,7 +73,6 @@ Future<void> registerWithEmail() async {
   @override
   void dispose() {
     usernameController.dispose();
-    phoneController.dispose();
     emailController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
@@ -121,11 +118,7 @@ Future<void> registerWithEmail() async {
                 controller: usernameController,
               ),
 
-              // 5. Added the Phone Number UI Field
-              CustomTextField(
-                hintText: 'Phone Number (e.g. +94771234567)',
-                controller: phoneController,
-              ),
+
 
               CustomTextField(hintText: 'Email', controller: emailController),
               CustomTextField(
@@ -157,7 +150,7 @@ Future<void> registerWithEmail() async {
                             strokeWidth: 2,
                           ),
                         )
-                      : const Text('Register & Send OTP'),
+                      : const Text('Register'),
                 ),
               ),
 

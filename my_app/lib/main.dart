@@ -16,8 +16,6 @@ import 'Passenger/forgot_password_screen.dart';
 import 'Driver/otp_screen.dart';
 import 'Passenger/otp_screen.dart';
 
-import 'Driver/register_otp_screen.dart';
-import 'Passenger/register_otp_screen.dart';
 
 
 import 'Driver/create_password_screen.dart'; 
@@ -80,8 +78,6 @@ class SafeRideApp extends StatelessWidget {
         '/Driverotp': (context) => const DriverOtpVerificationScreen(),
         '/otp': (context) => const OtpVerificationScreen(),
 
-        '/RegisterDriverotp': (context) => const RegisterDriverOtpVerificationScreen(),
-        '/Registerotp': (context) => const RegisterOtpVerificationScreen(),
 
 
         '/Drivercreate_password': (context) => const DriverCreateNewPasswordScreen(),
