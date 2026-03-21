@@ -1,36 +1,26 @@
 {
   "project_info": {
-    "project_number": "793706169158",
-    "project_id": "saferideauth-1852e",
-    "storage_bucket": "saferideauth-1852e.firebasestorage.app"
+    "project_number": "689687072678",
+    "project_id": "saferide-db00",
+    "storage_bucket": "saferide-db00.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:793706169158:android:a6ab4ef90f11709eef5b47",
+        "mobilesdk_app_id": "1:689687072678:android:172ef7ce2f60404b6ec967",
         "android_client_info": {
           "package_name": "com.example.my_app"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "793706169158-o6gntvlirb3jaeujj4h4584as5rpm9d4.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDr_wl0wS3AM-w6C7igOqJFo7G2maJYya4"
+          "current_key": "AIzaSyB_d4XZ3ZVSROfDI8LxernoIpMKhmEH3BA"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "793706169158-o6gntvlirb3jaeujj4h4584as5rpm9d4.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }

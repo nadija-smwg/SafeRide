@@ -1,0 +1,2 @@
+C:\Program Files\Common Files\Oracle\Java\javapath\java.exe
+C:\flutter\bin\flutter.bat
