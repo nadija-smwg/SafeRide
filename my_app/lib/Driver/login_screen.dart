@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/custom_widgets.dart';
 import 'package:my_app/Driver/welcome_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // 1. Added Firebase Auth import
+import '../services/api_service.dart'; // For Spring Boot backend calls
 
 // 2. Changed from StatelessWidget to StatefulWidget
 class DriverLoginScreen extends StatefulWidget {
@@ -31,6 +32,9 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
+
+      // Notify the Spring Boot backend with the Firebase ID Token
+      await ApiService.notifyBackend();
 
       // If successful, navigate to your exact home screen route!
       if (mounted) {

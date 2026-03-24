@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/custom_widgets.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/api_service.dart'; // For Spring Boot backend calls
 
 class DriverRegisterScreen extends StatefulWidget {
   const DriverRegisterScreen({super.key});
@@ -56,6 +57,9 @@ Future<void> registerWithEmail() async {
       'uid': userCredential.user!.uid,
       'createdAt': DateTime.now(),
     });
+
+    // Notify the Spring Boot backend with the Firebase ID Token
+    await ApiService.notifyBackend();
 
     if (mounted) {
       setState(() => isLoading = false);

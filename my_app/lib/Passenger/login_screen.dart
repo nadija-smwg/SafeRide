@@ -1,9 +1,80 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_widgets.dart';
 import 'package:my_app/Passenger/welcome_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../services/api_service.dart'; // For Spring Boot backend calls
 
-class LoginScreen extends StatelessWidget {
+// Changed from StatelessWidget to StatefulWidget to support Firebase Auth
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  // Controllers to grab the text from the UI
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  // Variable to control the loading spinner
+  bool isLoading = false;
+
+  // The Firebase Login Function
+  Future<void> loginUser() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      // Call Firebase to sign in
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+
+      // Notify the Spring Boot backend with the Firebase ID Token
+      await ApiService.notifyBackend();
+
+      // If successful, navigate to Passenger home screen
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    } on FirebaseAuthException catch (e) {
+      // Show an error pop-up if the password is wrong or email doesn't exist
+      String errorMessage = 'An error occurred. Please try again.';
+      if (e.code == 'user-not-found' ||
+          e.code == 'invalid-credential' ||
+          e.code == 'wrong-password') {
+        errorMessage = 'Invalid email or password.';
+      } else if (e.code == 'invalid-email') {
+        errorMessage = 'The email address is badly formatted.';
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(errorMessage)));
+      }
+    } catch (e) {
+      print(e.toString());
+    } finally {
+      // Stop the loading spinner
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
+  // Dispose of controllers when done to save memory
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,18 +89,15 @@ class LoginScreen extends StatelessWidget {
             size: 20,
           ),
           onPressed: () {
-  // 1. Check if there is actually a screen behind this one in the history
             if (Navigator.canPop(context)) {
-              // If yes, safely go back to it
               Navigator.pop(context);
             } else {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const WelcomeScreen()),
               );
-  
             }
-          }
+          },
         ),
       ),
       body: SafeArea(
@@ -50,10 +118,15 @@ class LoginScreen extends StatelessWidget {
               ),
               const SizedBox(height: 40),
 
-              const CustomTextField(hintText: 'Enter your email'),
-              const CustomTextField(
+              // Connected controllers to text fields
+              CustomTextField(
+                hintText: 'Enter your email',
+                controller: emailController,
+              ),
+              CustomTextField(
                 hintText: 'Enter your password',
                 isPassword: true,
+                controller: passwordController,
               ),
 
               Align(
@@ -70,13 +143,23 @@ class LoginScreen extends StatelessWidget {
               ),
               const SizedBox(height: 20),
 
-              ElevatedButton(
-                onPressed: () {
-                  // This command replaces the login screen with the home screen
-                  // so the user can't accidentally swipe back to the login page!
-                  Navigator.pushReplacementNamed(context, '/home');
-                },
-                child: const Text('Login'),
+              // Connected button to the login function & added a spinner
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: isLoading ? null : loginUser,
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text('Login'),
+                ),
               ),
               const SizedBox(height: 40),
 
