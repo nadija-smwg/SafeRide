@@ -11,19 +11,43 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  // 1. Controllers to grab the text from the boxes
-  final TextEditingController usernameController = TextEditingController();
+  // --- SECTION 1: Parent Details ---
+  final TextEditingController emergencyContactController = TextEditingController();
+  final TextEditingController addressController = TextEditingController();
+
+  // --- SECTION 2: Confirmation Details ---
   final TextEditingController emailController = TextEditingController();
+  final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController = TextEditingController();
 
   bool isLoading = false;
 
-  // 2. The Logic Function
-  Future<void> registerWithEmail() async {
-    if (emailController.text.trim().isEmpty || passwordController.text.trim().isEmpty) {
+  // Header Style Helper
+  Widget _sectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 20, bottom: 10),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
+  Future<void> registerParent() async {
+    // 1. Validation
+    if (emergencyContactController.text.isEmpty || 
+        addressController.text.isEmpty || 
+        emailController.text.isEmpty || 
+        usernameController.text.isEmpty || 
+        passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill in all fields.")),
+        const SnackBar(content: Text("Please fill in all details for your child's safety.")),
       );
       return;
     }
@@ -38,33 +62,66 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => isLoading = true);
 
     try {
-      // Create user in Firebase Auth
+      // 2. Create Auth User
       UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
 
-      // Save Passenger data to Firestore Database
-      await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
-        'username': usernameController.text.trim(),
+      // 3. SEND THE VERIFICATION LINK
+      await userCredential.user!.sendEmailVerification();
+
+      // 4. Save to 'parents' collection with DEFAULT ROLE
+      await FirebaseFirestore.instance.collection('parents').doc(userCredential.user!.uid).set({
+        'emergencyContact': emergencyContactController.text.trim(),
+        'homeAddress': addressController.text.trim(),
         'email': emailController.text.trim(),
-        'role': 'Passenger', 
+        'username': usernameController.text.trim(),
+        'role': 'Parent', // Hardcoded default role
         'uid': userCredential.user!.uid,
-        'createdAt': DateTime.now(),
+        'createdAt': FieldValue.serverTimestamp(),
       });
 
       if (mounted) {
         setState(() => isLoading = false);
-        Navigator.pushNamed(context, '/home'); // Success!
-      }
-    } on FirebaseAuthException catch (e) {
-      if (mounted) {
-        setState(() => isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message ?? "An error occurred")),
+        
+        // 5. Success Dialog explaining the verification email
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+            title: const Text("Verify Your Email", style: TextStyle(color: Color(0xFF00C2E0))),
+            content: Text("Safety first! A verification link has been sent to ${emailController.text.trim()}.\n\nPlease click the link in your inbox to verify your account."),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); 
+                  Navigator.pushNamed(context, '/Passengerlogin'); 
+                },
+                child: const Text("OK", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00C2E0))),
+              ),
+            ],
+          ),
         );
       }
+    } on FirebaseAuthException catch (e) {
+      setState(() => isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message ?? "An error occurred")),
+      );
     }
+  }
+
+  @override
+  void dispose() {
+    emergencyContactController.dispose();
+    addressController.dispose();
+    emailController.dispose();
+    usernameController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -81,55 +138,72 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(), // High-quality bounce effect
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 10),
               const Text(
-                'Hello! Register to get\nstarted',
+                'Create Parent Account',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF00C2E0),
-                  height: 1.3,
+                  height: 1.2,
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 10),
 
-              // 3. Connect Controllers to the UI
-              CustomTextField(hintText: 'Username', controller: usernameController),
+              // --- SECTION 1 ---
+              _sectionHeader("Parent Details"),
+              CustomTextField(hintText: 'Emergency Contact Number', controller: emergencyContactController),
+              CustomTextField(hintText: 'Home Address', controller: addressController),
+
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 10),
+                child: Divider(thickness: 1),
+              ),
+
+              // --- SECTION 2 ---
+              _sectionHeader("Confirmation Details"),
               CustomTextField(hintText: 'Email', controller: emailController),
-              CustomTextField(hintText: 'Password', isPassword: true, controller: passwordController),
-              CustomTextField(hintText: 'Confirm password', isPassword: true, controller: confirmPasswordController),
+              CustomTextField(hintText: 'Username', controller: usernameController),
+              CustomTextField(
+                hintText: 'Password', 
+                isPassword: true, 
+                controller: passwordController
+              ),
+              CustomTextField(
+                hintText: 'Confirm password', 
+                isPassword: true, 
+                controller: confirmPasswordController
+              ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 30),
 
-              // 4. Update the Button
+              // Register Button
               SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: 55,
                 child: ElevatedButton(
-                  onPressed: isLoading ? null : registerWithEmail,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00C2E0),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: isLoading ? null : registerParent,
                   child: isLoading
-                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Text('Register Now'),
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          'Register Now',
+                          style: TextStyle(
+                            fontSize: 18, 
+                            fontWeight: FontWeight.bold, 
+                            color: Colors.white
+                          ),
+                        ),
                 ),
               ),
-              const SizedBox(height: 40),
 
-              const Row(
-                children: [
-                  Expanded(child: Divider(color: Colors.grey)),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Text('Or Register with', style: TextStyle(color: Colors.grey)),
-                  ),
-                  Expanded(child: Divider(color: Colors.grey)),
-                ],
-              ),
-              const SizedBox(height: 30),
-              const SocialLoginRow(),
               const SizedBox(height: 40),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -137,10 +211,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const Text("Already have an account? ", style: TextStyle(color: Colors.black54)),
                   GestureDetector(
                     onTap: () => Navigator.pushNamed(context, '/Passengerlogin'),
-                    child: const Text('Login Now', style: TextStyle(color: Color(0xFF00C2E0), fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      'Login Now',
+                      style: TextStyle(
+                        color: Color(0xFF00C2E0), 
+                        fontWeight: FontWeight.bold
+                      ),
+                    ),
                   ),
                 ],
               ),
+              const SizedBox(height: 30),
             ],
           ),
         ),

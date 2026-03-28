@@ -11,72 +11,122 @@ class DriverRegisterScreen extends StatefulWidget {
 }
 
 class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
-  final TextEditingController usernameController = TextEditingController();
-  final TextEditingController phoneController =
-      TextEditingController(); // 1. Added Phone Controller
+  // --- SECTION 1: Personal Details ---
+  final TextEditingController fullNameController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
+  final TextEditingController licenseController = TextEditingController();
+  final TextEditingController vehicleController = TextEditingController();
+
+  // --- SECTION 2: Confirmation Details ---
   final TextEditingController emailController = TextEditingController();
+  final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController =
-      TextEditingController();
+  final TextEditingController confirmPasswordController = TextEditingController();
 
   bool isLoading = false;
 
-  // 2. Updated function to send the SMS instead of creating an email user
-// 1. Replace the old sendOtp function with this:
-Future<void> registerWithEmail() async {
-  // Basic Validations
-  if (emailController.text.trim().isEmpty || passwordController.text.trim().isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Please fill in all fields.")),
+  // Header Style Helper
+  Widget _sectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 20, bottom: 10),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
+          letterSpacing: 0.5,
+        ),
+      ),
     );
-    return;
   }
 
-  if (passwordController.text != confirmPasswordController.text) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Passwords do not match!")),
-    );
-    return;
-  }
-
-  setState(() {
-    isLoading = true;
-  });
-
-  try {
-    // 2. Create the user in Firebase Auth
-    UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-      email: emailController.text.trim(),
-      password: passwordController.text.trim(),
-    );
-
-    // 3. Save the Driver details to Firestore (The Database)
-    await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
-      'username': usernameController.text.trim(),
-      'email': emailController.text.trim(),
-      'role': 'Driver', // Hardcoded as Driver for this screen
-      'uid': userCredential.user!.uid,
-      'createdAt': DateTime.now(),
-    });
-
-    if (mounted) {
-      setState(() => isLoading = false);
-      // 4. Success! Go straight to Driver Home (No OTP needed)
-      Navigator.pushNamed(context, '/Driverhome');
+  Future<void> registerDriver() async {
+    // 1. Validations
+    if (fullNameController.text.isEmpty || 
+        phoneController.text.isEmpty || 
+        licenseController.text.isEmpty || 
+        vehicleController.text.isEmpty || 
+        emailController.text.isEmpty || 
+        usernameController.text.isEmpty || 
+        passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill in all details to register.")),
+      );
+      return;
     }
-  } on FirebaseAuthException catch (e) {
-    setState(() => isLoading = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(e.message ?? "An error occurred")),
-    );
+
+    if (passwordController.text != confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Passwords do not match!")),
+      );
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      // 2. Create the User in Firebase Auth
+      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+
+      // 3. SEND THE VERIFICATION LINK
+      await userCredential.user!.sendEmailVerification();
+
+      // 4. Save to 'drivers' collection with DEFAULT ROLE
+      await FirebaseFirestore.instance.collection('drivers').doc(userCredential.user!.uid).set({
+        'fullName': fullNameController.text.trim(),
+        'phone': phoneController.text.trim(),
+        'licenseNumber': licenseController.text.trim(),
+        'vehicleNumber': vehicleController.text.trim(),
+        'email': emailController.text.trim(),
+        'username': usernameController.text.trim(),
+        'role': 'Driver', // Hardcoded default role
+        'uid': userCredential.user!.uid,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      if (mounted) {
+        setState(() => isLoading = false);
+        
+        // 5. Success Dialog explaining the verification email
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+            title: const Text("Verify Your Email", style: TextStyle(color: Color(0xFF00C2E0))),
+            content: Text("Account created! A verification link has been sent to ${emailController.text.trim()}.\n\nPlease check your inbox and click the link before logging in."),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); 
+                  Navigator.pushNamed(context, '/Driverlogin'); 
+                },
+                child: const Text("OK", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00C2E0))),
+              ),
+            ],
+          ),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      setState(() => isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message ?? "An error occurred")),
+      );
+    }
   }
-}  
 
   @override
   void dispose() {
-    usernameController.dispose();
+    fullNameController.dispose();
     phoneController.dispose();
+    licenseController.dispose();
+    vehicleController.dispose();
     emailController.dispose();
+    usernameController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
     super.dispose();
@@ -90,120 +140,99 @@ Future<void> registerWithEmail() async {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new,
-            color: Colors.black,
-            size: 20,
-          ),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(), // The "Bouncing" detail you liked!
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 10),
               const Text(
-                'Hello! Register to get\nstarted',
+                'Driver Registration',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF00C2E0),
-                  height: 1.3,
+                  height: 1.2,
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 10),
 
-              CustomTextField(
-                hintText: 'Username',
-                controller: usernameController,
+              // --- SECTION 1 ---
+              _sectionHeader("Personal Details"),
+              CustomTextField(hintText: 'Full Name', controller: fullNameController),
+              CustomTextField(hintText: 'Phone Number', controller: phoneController),
+              CustomTextField(hintText: 'License Number', controller: licenseController),
+              CustomTextField(hintText: 'Vehicle Number', controller: vehicleController),
+
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 10),
+                child: Divider(thickness: 1),
               ),
 
-              // 5. Added the Phone Number UI Field
-              CustomTextField(
-                hintText: 'Phone Number (e.g. +94771234567)',
-                controller: phoneController,
-              ),
-
+              // --- SECTION 2 ---
+              _sectionHeader("Confirmation Details"),
               CustomTextField(hintText: 'Email', controller: emailController),
+              CustomTextField(hintText: 'Username', controller: usernameController),
               CustomTextField(
-                hintText: 'Password',
-                isPassword: true,
-                controller: passwordController,
+                hintText: 'Password', 
+                isPassword: true, 
+                controller: passwordController
               ),
               CustomTextField(
-                hintText: 'Confirm password',
-                isPassword: true,
-                controller: confirmPasswordController,
+                hintText: 'Confirm password', 
+                isPassword: true, 
+                controller: confirmPasswordController
               ),
 
-              const SizedBox(height: 20),
-
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: isLoading
-                      ? null
-                      : registerWithEmail, // Connects to the new SMS function
-                  child: isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Text('Register & Send OTP'),
-                ),
-              ),
-
-              const SizedBox(height: 40),
-
-              const Row(
-                children: [
-                  Expanded(child: Divider(color: Colors.grey)),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      'Or Register with',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                  Expanded(child: Divider(color: Colors.grey)),
-                ],
-              ),
               const SizedBox(height: 30),
 
-              const SocialLoginRow(),
-
-              const SizedBox(height: 40),
-
-              Padding(
-                padding: const EdgeInsets.only(bottom: 30.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "Already have an account? ",
-                      style: TextStyle(color: Colors.black54),
-                    ),
-                    GestureDetector(
-                      onTap: () => Navigator.pushNamed(context, '/Driverlogin'),
-                      child: const Text(
-                        'Login Now',
-                        style: TextStyle(
-                          color: Color(0xFF00C2E0),
-                          fontWeight: FontWeight.bold,
+              // Register Button
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00C2E0),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: isLoading ? null : registerDriver,
+                  child: isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          'Register & Verify',
+                          style: TextStyle(
+                            fontSize: 18, 
+                            fontWeight: FontWeight.bold, 
+                            color: Colors.white
+                          ),
                         ),
-                      ),
-                    ),
-                  ],
                 ),
               ),
+
+              const SizedBox(height: 30),
+              
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text("Already a Driver? ", style: TextStyle(color: Colors.black54)),
+                  GestureDetector(
+                    onTap: () => Navigator.pushNamed(context, '/Driverlogin'),
+                    child: const Text(
+                      'Login Now',
+                      style: TextStyle(
+                        color: Color(0xFF00C2E0), 
+                        fontWeight: FontWeight.bold
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 40),
             ],
           ),
         ),
