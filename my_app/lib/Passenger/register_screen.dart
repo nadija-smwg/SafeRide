@@ -156,7 +156,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               // --- SECTION 1 ---
               _sectionHeader("Parent Details"),
-              CustomTextField(hintText: 'Emergency Contact Number', controller: emergencyContactController),
+              CustomTextField(hintText: 'Phone Number', controller: emergencyContactController),
               CustomTextField(hintText: 'Home Address', controller: addressController),
 
               const Padding(
