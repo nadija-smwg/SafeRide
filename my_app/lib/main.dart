@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'screens/role_selection_screen.dart';
+import 'screens/auth_wrapper.dart';
 import 'Driver/welcome_screen.dart';
 import 'Passenger/welcome_screen.dart';
 
@@ -62,7 +63,8 @@ class SafeRideApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => const RoleSelectionScreen(),
+        '/': (context) => const AuthWrapper(),
+        '/RoleSelection': (context) => const RoleSelectionScreen(),
 
         '/DriverWelcome': (context) => const DriverWelcomeScreen(),
         '/PassengerWelcome': (context) => const WelcomeScreen(),

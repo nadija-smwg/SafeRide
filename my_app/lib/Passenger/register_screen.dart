@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_widgets.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '../services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -62,53 +61,49 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => isLoading = true);
 
     try {
-      // 2. Create Auth User
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      final authService = AuthService();
+      bool success = await authService.registerUser(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
+        role: 'Parent',
+        username: usernameController.text.trim(),
+        phoneNumber: emergencyContactController.text.trim(),
+        homeAddress: addressController.text.trim(),
       );
-
-      // 3. SEND THE VERIFICATION LINK
-      await userCredential.user!.sendEmailVerification();
-
-      // 4. Save to 'parents' collection with DEFAULT ROLE
-      await FirebaseFirestore.instance.collection('parents').doc(userCredential.user!.uid).set({
-        'emergencyContact': emergencyContactController.text.trim(),
-        'homeAddress': addressController.text.trim(),
-        'email': emailController.text.trim(),
-        'username': usernameController.text.trim(),
-        'role': 'Parent', // Hardcoded default role
-        'uid': userCredential.user!.uid,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
 
       if (mounted) {
         setState(() => isLoading = false);
         
-        // 5. Success Dialog explaining the verification email
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-            title: const Text("Verify Your Email", style: TextStyle(color: Color(0xFF00C2E0))),
-            content: Text("Safety first! A verification link has been sent to ${emailController.text.trim()}.\n\nPlease click the link in your inbox to verify your account."),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context); 
-                  Navigator.pushNamed(context, '/Passengerlogin'); 
-                },
-                child: const Text("OK", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00C2E0))),
-              ),
-            ],
-          ),
-        );
+        if (success) {
+          // 5. Success Dialog explaining the verification email
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+              title: const Text("Verify Your Email", style: TextStyle(color: Color(0xFF00C2E0))),
+              content: Text("Safety first! A verification link has been sent to ${emailController.text.trim()}.\n\nPlease click the link in your inbox to verify your account."),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context); 
+                    Navigator.pushNamed(context, '/Passengerlogin'); 
+                  },
+                  child: const Text("OK", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00C2E0))),
+                ),
+              ],
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Registration failed. Please check your details or server connection.")),
+          );
+        }
       }
-    } on FirebaseAuthException catch (e) {
+    } catch (e) {
       setState(() => isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message ?? "An error occurred")),
+        const SnackBar(content: Text("An error occurred connecting to the server.")),
       );
     }
   }

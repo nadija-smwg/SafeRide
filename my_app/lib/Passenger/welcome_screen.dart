@@ -16,9 +16,8 @@ class WelcomeScreen extends StatelessWidget {
                   flex: 5,
                   child: Container(
                     width: double.infinity,
-                    color: const Color(0xFFE8F4F8), // Light sky blue background
+                    color: const Color(0xFFE8F4F8),
                     child: Center(
-                      // Put your image asset here like we discussed!
                       child: Image.asset(
                         'assets/images/bus_illustration.png',
                         fit: BoxFit.contain,
@@ -43,8 +42,6 @@ class WelcomeScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 10),
-
-                        // Connected Button Block
                         Container(
                           decoration: BoxDecoration(
                             color: const Color(0xFF00C2E0),
@@ -64,25 +61,19 @@ class WelcomeScreen extends StatelessWidget {
                                 child: const Text('Login'),
                               ),
                               Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16.0,
-                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 16.0),
                                 child: LayoutBuilder(
                                   builder: (context, constraints) {
                                     return Flex(
                                       direction: Axis.horizontal,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: List.generate(
-                                        (constraints.constrainWidth() / 5)
-                                            .floor(),
+                                        (constraints.constrainWidth() / 5).floor(),
                                         (index) => const SizedBox(
                                           width: 2,
                                           height: 1,
                                           child: DecoratedBox(
-                                            decoration: BoxDecoration(
-                                              color: Colors.white54,
-                                            ),
+                                            decoration: BoxDecoration(color: Colors.white54),
                                           ),
                                         ),
                                       ),
@@ -104,7 +95,6 @@ class WelcomeScreen extends StatelessWidget {
                             ],
                           ),
                         ),
-
                         const Text(
                           'Protect your Child!',
                           style: TextStyle(color: Color(0xFF00C2E0)),
@@ -115,11 +105,9 @@ class WelcomeScreen extends StatelessWidget {
                 ),
               ],
             ),
-
-            // LAYER 2: The Floating Back Button
             Positioned(
-              top: 8, // Adjust this number to move it up or down
-              left: 8, // Adjust this number to move it left or right
+              top: 8,
+              left: 8,
               child: IconButton(
                 icon: const Icon(
                   Icons.arrow_back_ios_new,

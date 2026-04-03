@@ -1,214 +1,94 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/services.dart'; // For Clipboard
-// Map & Location Imports
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'add_student_to_driver_screen.dart';
+import 'route_list_screen.dart';
 
-class DriverHomeScreen extends StatefulWidget {
+class DriverHomeScreen extends StatelessWidget {
   const DriverHomeScreen({super.key});
-
-  @override
-  State<DriverHomeScreen> createState() => _DriverHomeScreenState();
-}
-
-class _DriverHomeScreenState extends State<DriverHomeScreen> {
-  // 1. State Variables
-  bool isDriverMode = true; // Controls Live Tracking
-  bool isStudentsExpanded = true;
-  bool isScheduleExpanded = false;
-
-  // Dummy Student Data
-  List<Map<String, dynamic>> students = [
-    {'name': 'Amal', 'morning': true, 'afternoon': false},
-    {'name': 'Saman', 'morning': true, 'afternoon': true},
-    {'name': 'Kamal', 'morning': false, 'afternoon': true},
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _requestLocationPermission();
-  }
-
-  Future<void> _requestLocationPermission() async {
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      await Geolocator.requestPermission();
-    }
-  }
-
-  // Show a popup for the Invitation Link
-  void _showInvitePopup() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Invite Student"),
-        content: const Text("Copy this link to invite a student to your bus: \nsaferide.app/invite/bus123"),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Clipboard.setData(const ClipboardData(text: "saferide.app/invite/bus123"));
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Link copied!")));
-            },
-            child: const Text("Copy Link"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDivider() {
-    return Container(height: 1.5, color: Colors.grey.shade300);
-  }
-
-  Widget _buildListRow({required String title, required Widget trailing}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic)),
-          trailing,
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF00C2E0),
+        title: const Text('Driver Dashboard', style: TextStyle(color: Colors.black)),
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.black),
+            onPressed: () async {
+              SharedPreferences prefs = await SharedPreferences.getInstance();
+              prefs.remove('uid');
+              prefs.remove('role');
+              Navigator.pushReplacementNamed(context, '/Driverlogin');
+            },
+          )
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
           children: [
-            const Text('Driver Sanath', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(width: 10),
-            const CircleAvatar(
-              radius: 18,
-              backgroundImage: NetworkImage('https://cdn-icons-png.flaticon.com/512/3135/3135715.png'),
+            _buildModeCard(
+              context,
+              title: "Pickup Mode",
+              description: "Start morning route to school",
+              icon: Icons.wb_sunny,
+              color: Colors.orangeAccent,
+              isPickup: true,
+            ),
+            const SizedBox(height: 20),
+            _buildModeCard(
+              context,
+              title: "Dropoff Mode",
+              description: "Start afternoon route to home",
+              icon: Icons.nights_stay,
+              color: Colors.indigoAccent,
+              isPickup: false,
             ),
           ],
         ),
       ),
-      body: Column(
-        children: [
-          // 1. Driver Mode (Controls Live Tracking)
-          _buildListRow(
-            title: 'Driver Mode',
-            trailing: Switch(
-              value: isDriverMode,
-              activeTrackColor: Colors.greenAccent.shade400,
-              onChanged: (val) => setState(() => isDriverMode = val),
-            ),
-          ),
-          _buildDivider(),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const AddStudentToDriverScreen()));
+        },
+        backgroundColor: const Color(0xFF00C2E0),
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text('Link Student', style: TextStyle(color: Colors.white)),
+      ),
+    );
+  }
 
-          // 2. Attendance (QR Scanner Placeholder)
-          InkWell(
-            onTap: () {
-              // This is where you'd trigger the Camera Scanner
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Opening QR Scanner...")));
-            },
-            child: _buildListRow(
-              title: 'Attendance',
-              trailing: const Icon(Icons.qr_code_scanner, size: 28, color: Colors.black87),
-            ),
-          ),
-          _buildDivider(),
-
-          // 3. Students List
-          InkWell(
-            onTap: () => setState(() => isStudentsExpanded = !isStudentsExpanded),
-            child: _buildListRow(
-              title: 'Students',
-              trailing: Row(
+  Widget _buildModeCard(BuildContext context, {required String title, required String description, required IconData icon, required Color color, required bool isPickup}) {
+    return InkWell(
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => RouteListScreen(isPickup: isPickup)));
+      },
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withOpacity(0.5)),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(backgroundColor: color, radius: 30, child: Icon(icon, color: Colors.white, size: 30)),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(isStudentsExpanded ? Icons.keyboard_arrow_down : Icons.arrow_back_ios_new, size: 16),
-                  const SizedBox(width: 12),
-                  IconButton(
-                    onPressed: _showInvitePopup,
-                    icon: const Icon(Icons.add_circle, size: 26, color: Colors.black),
-                  ),
+                  Text(title, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
+                  const SizedBox(height: 5),
+                  Text(description, style: const TextStyle(fontSize: 14)),
                 ],
               ),
             ),
-          ),
-          if (isStudentsExpanded)
-            ...students.map((s) => Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 4.0),
-              child: Row(children: [
-                const Icon(Icons.person, size: 16, color: Colors.grey),
-                const SizedBox(width: 8),
-                Text(s['name'], style: const TextStyle(fontWeight: FontWeight.w500)),
-              ]),
-            )).toList(),
-          _buildDivider(),
-
-          // 4. Schedule Table
-          InkWell(
-            onTap: () => setState(() => isScheduleExpanded = !isScheduleExpanded),
-            child: _buildListRow(
-              title: 'Schedule',
-              trailing: Icon(isScheduleExpanded ? Icons.keyboard_arrow_down : Icons.arrow_back_ios_new, size: 16),
-            ),
-          ),
-          if (isScheduleExpanded)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Table(
-                border: TableBorder.all(color: Colors.grey.shade300),
-                children: [
-                  const TableRow(children: [
-                    TableCell(child: Center(child: Text('Student', style: TextStyle(fontWeight: FontWeight.bold)))),
-                    TableCell(child: Center(child: Text('Morning', style: TextStyle(fontWeight: FontWeight.bold)))),
-                    TableCell(child: Center(child: Text('Afternoon', style: TextStyle(fontWeight: FontWeight.bold)))),
-                  ]),
-                  ...students.map((s) => TableRow(children: [
-                    TableCell(child: Center(child: Text(s['name']))),
-                    TableCell(child: Icon(s['morning'] ? Icons.check_circle : Icons.cancel, color: s['morning'] ? Colors.green : Colors.red, size: 20)),
-                    TableCell(child: Icon(s['afternoon'] ? Icons.check_circle : Icons.cancel, color: s['afternoon'] ? Colors.green : Colors.red, size: 20)),
-                  ])).toList(),
-                ],
-              ),
-            ),
-          _buildDivider(),
-
-          // 5. Map (Always Visible)
-          Expanded(
-            child: FlutterMap(
-              options: const MapOptions(
-                initialCenter: LatLng(6.9271, 79.8612),
-                initialZoom: 15.0,
-              ),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-                  subdomains: const ['a', 'b', 'c', 'd'],
-                ),
-                // Live Location Layer - Only "Follows" and "Rotates" if Driver Mode is ON
-                CurrentLocationLayer(
-                  alignPositionOnUpdate: isDriverMode ? AlignOnUpdate.always : AlignOnUpdate.never,
-                  alignDirectionOnUpdate: isDriverMode ? AlignOnUpdate.always : AlignOnUpdate.never,
-                  style: const LocationMarkerStyle(
-                    marker: DefaultLocationMarker(
-                      color: Colors.amber,
-                      child: Icon(Icons.directions_bus, color: Colors.black, size: 20),
-                    ),
-                    markerSize: Size(40, 40),
-                    markerDirection: MarkerDirection.heading,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+            Icon(Icons.arrow_forward_ios, color: color),
+          ],
+        ),
       ),
     );
   }

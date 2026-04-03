@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_widgets.dart';
 import 'package:my_app/Driver/welcome_screen.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // 1. Added Firebase Auth import
+import '../services/auth_service.dart';
 
 // 2. Changed from StatelessWidget to StatefulWidget
 class DriverLoginScreen extends StatefulWidget {
@@ -26,34 +26,33 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
     });
 
     try {
-      // Call Firebase to sign in
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
+      // Use our Spring Boot AuthService
+      final authService = AuthService();
+      bool success = await authService.loginUser(
+        emailController.text.trim(),
+        passwordController.text.trim(),
+        "DRIVER",
       );
 
-      // If successful, navigate to your exact home screen route!
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/Driverhome');
-      }
-    } on FirebaseAuthException catch (e) {
-      // Show an error pop-up if the password is wrong or email doesn't exist
-      String errorMessage = 'An error occurred. Please try again.';
-      if (e.code == 'user-not-found' ||
-          e.code == 'invalid-credential' ||
-          e.code == 'wrong-password') {
-        errorMessage = 'Invalid email or password.';
-      } else if (e.code == 'invalid-email') {
-        errorMessage = 'The email address is badly formatted.';
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(errorMessage)));
+      if (success) {
+        // If successful, navigate to your exact home screen route!
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/Driverhome');
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Invalid email or password.')),
+          );
+        }
       }
     } catch (e) {
       print(e.toString());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Connection Error. Please try again.')),
+        );
+      }
     } finally {
       // Stop the loading spinner
       if (mounted) {

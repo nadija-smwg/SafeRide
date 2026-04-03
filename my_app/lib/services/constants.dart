@@ -1,9 +1,8 @@
 // lib/services/constants.dart
 
 class ApiConstants {
-  // 10.0.2.2 is the special IP address that allows the 
-  // Android Emulator to connect to your computer's localhost.
-  static const String baseUrl = "http://10.0.2.2:8085";
+  // IP address of the machine running the Spring Boot backend
+  static const String baseUrl = "http://172.20.10.5:8085";
 
   // Authentication Endpoints
   static const String registerEndpoint = "$baseUrl/api/auth/register";

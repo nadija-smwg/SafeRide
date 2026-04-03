@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'constants.dart'; 
 
 class AuthService {
@@ -10,11 +11,12 @@ class AuthService {
     required String email,
     required String password,
     required String role,
-    required String fullName,
-    required String phoneNumber,
-    required String licenseNumber,
-    required String vehicleNumber,
     required String username,
+    String? fullName,
+    String? phoneNumber,
+    String? licenseNumber,
+    String? vehicleNumber,
+    String? homeAddress,
   }) async {
     try {
       final response = await http.post(
@@ -24,16 +26,19 @@ class AuthService {
           "email": email,
           "password": password,
           "role": role,
+          "username": username,
           "fullName": fullName,
           "phoneNumber": phoneNumber,
           "licenseNumber": licenseNumber,
           "vehicleNumber": vehicleNumber,
-          "username": username,
-          "confirmPassword": password, // Backend DTO expects this field
+          "homeAddress": homeAddress,
+          "confirmPassword": password,
         }),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        // You may want to parse UID from response if it returns it.
+        // If register auto logs out, they login manually anyway.
         print("Registration Successful");
         return true;
       } else {
@@ -47,7 +52,7 @@ class AuthService {
   }
 
   // LOGIN FUNCTION
-  Future<bool> loginUser(String email, String password) async {
+  Future<bool> loginUser(String email, String password, String expectedRole) async {
     try {
       final response = await http.post(
         Uri.parse(ApiConstants.loginEndpoint),
@@ -55,10 +60,16 @@ class AuthService {
         body: jsonEncode({
           "email": email,
           "password": password,
+          "expectedRole": expectedRole,
         }),
       );
 
       if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final String uid = data['uid'] ?? '';
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString('uid', uid);
+        await prefs.setString('role', expectedRole);
         print("Login Successful");
         return true;
       } else {
