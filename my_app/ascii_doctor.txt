@@ -1,0 +1,34 @@
+[???] Flutter (Channel stable, 3.41.4, on Microsoft Windows [Version 10.0.26200.8037], locale en-US) [299ms]
+    ??? Flutter version 3.41.4 on channel stable at C:\flutter
+    ??? Upstream repository https://github.com/flutter/flutter.git
+    ??? Framework revision ff37bef603 (2 weeks ago), 2026-03-03 16:03:22 -0800
+    ??? Engine revision e4b8dca3f1
+    ??? Dart version 3.11.1
+    ??? DevTools version 2.54.1
+    ??? Feature flags: enable-web, enable-linux-desktop, enable-macos-desktop, enable-windows-desktop, enable-android, enable-ios, cli-animations, enable-native-assets, omit-legacy-version-file, enable-lldb-debugging, enable-uiscene-migration
+
+[???] Windows Version (11 Home Single Language 64-bit, 25H2, 2009) [1,156ms]
+
+[X] Android toolchain - develop for Android devices [1,558ms]
+    ??? Android SDK at C:\Android
+    ??? Emulator version 36.4.10.0 (build_id 15004761) (CL:N/A)
+    X Flutter requires Android SDK 36 and the Android BuildTools 28.0.3
+      To update the Android SDK visit https://flutter.dev/to/windows-android-setup for detailed instructions.
+
+[???] Chrome - develop for the web [14ms]
+    ??? Chrome at C:\Program Files\Google\Chrome\Application\chrome.exe
+
+[X] Visual Studio - develop Windows apps [13ms]
+    X Visual Studio not installed; this is necessary to develop Windows apps.
+      Download at https://visualstudio.microsoft.com/downloads/.
+      Please install the "Desktop development with C++" workload, including all of its default components
+
+[???] Connected device (3 available) [177ms]
+    ??? Windows (desktop) ??? windows ??? windows-x64    ??? Microsoft Windows [Version 10.0.26200.8037]
+    ??? Chrome (web)      ??? chrome  ??? web-javascript ??? Google Chrome 146.0.7680.153
+    ??? Edge (web)        ??? edge    ??? web-javascript ??? Microsoft Edge 146.0.3856.62
+
+[???] Network resources [632ms]
+    ??? All expected network resources are available.
+
+! Doctor found issues in 2 categories.
