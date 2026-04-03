@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_widgets.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/auth_service.dart'; 
 
 class DriverRegisterScreen extends StatefulWidget {
   const DriverRegisterScreen({super.key});
@@ -24,8 +23,9 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
   final TextEditingController confirmPasswordController = TextEditingController();
 
   bool isLoading = false;
+  
+  final AuthService _authService = AuthService();
 
-  // Header Style Helper
   Widget _sectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.only(top: 20, bottom: 10),
@@ -41,6 +41,7 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
     );
   }
 
+  // --- UPDATED REGISTER FUNCTION FOR SPRING BOOT ---
   Future<void> registerDriver() async {
     // 1. Validations
     if (fullNameController.text.isEmpty || 
@@ -66,56 +67,54 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
     setState(() => isLoading = true);
 
     try {
-      // 2. Create the User in Firebase Auth
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      // 2. Send ALL Data to Spring Boot Backend
+      // This matches the updated registerUser parameters in your AuthService
+      bool success = await _authService.registerUser(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
+        role: "DRIVER", 
+        fullName: fullNameController.text.trim(),
+        phoneNumber: phoneController.text.trim(),
+        licenseNumber: licenseController.text.trim(),
+        vehicleNumber: vehicleController.text.trim(),
+        username: usernameController.text.trim(),
       );
-
-      // 3. SEND THE VERIFICATION LINK
-      await userCredential.user!.sendEmailVerification();
-
-      // 4. Save to 'drivers' collection with DEFAULT ROLE
-      await FirebaseFirestore.instance.collection('drivers').doc(userCredential.user!.uid).set({
-        'fullName': fullNameController.text.trim(),
-        'phone': phoneController.text.trim(),
-        'licenseNumber': licenseController.text.trim(),
-        'vehicleNumber': vehicleController.text.trim(),
-        'email': emailController.text.trim(),
-        'username': usernameController.text.trim(),
-        'role': 'Driver', // Hardcoded default role
-        'uid': userCredential.user!.uid,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
 
       if (mounted) {
         setState(() => isLoading = false);
         
-        // 5. Success Dialog explaining the verification email
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-            title: const Text("Verify Your Email", style: TextStyle(color: Color(0xFF00C2E0))),
-            content: Text("Account created! A verification link has been sent to ${emailController.text.trim()}.\n\nPlease check your inbox and click the link before logging in."),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context); 
-                  Navigator.pushNamed(context, '/Driverlogin'); 
-                },
-                child: const Text("OK", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00C2E0))),
-              ),
-            ],
-          ),
+        if (success) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+              title: const Text("Success!", style: TextStyle(color: Color(0xFF00C2E0))),
+              content: const Text("Account created successfully on the SafeRide server! You can now log in."),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context); 
+                    Navigator.pushNamed(context, '/Driverlogin'); 
+                  },
+                  child: const Text("OK", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00C2E0))),
+                ),
+              ],
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Registration failed. Please check your details or server connection.")),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Connection Error: Could not connect to the server.")),
         );
       }
-    } on FirebaseAuthException catch (e) {
-      setState(() => isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message ?? "An error occurred")),
-      );
     }
   }
 
@@ -146,7 +145,7 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(), // The "Bouncing" detail you liked!
+          physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -162,7 +161,6 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
               ),
               const SizedBox(height: 10),
 
-              // --- SECTION 1 ---
               _sectionHeader("Personal Details"),
               CustomTextField(hintText: 'Full Name', controller: fullNameController),
               CustomTextField(hintText: 'Phone Number', controller: phoneController),
@@ -174,7 +172,6 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
                 child: Divider(thickness: 1),
               ),
 
-              // --- SECTION 2 ---
               _sectionHeader("Confirmation Details"),
               CustomTextField(hintText: 'Email', controller: emailController),
               CustomTextField(hintText: 'Username', controller: usernameController),
@@ -191,7 +188,6 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
 
               const SizedBox(height: 30),
 
-              // Register Button
               SizedBox(
                 width: double.infinity,
                 height: 55,
@@ -204,7 +200,7 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
                   child: isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text(
-                          'Register & Verify',
+                          'Register',
                           style: TextStyle(
                             fontSize: 18, 
                             fontWeight: FontWeight.bold, 
