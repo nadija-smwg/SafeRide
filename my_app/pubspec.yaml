@@ -1,0 +1,49 @@
+name: my_app
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.8
+
+# ... (lines above)
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # Firebase - Balanced Versions
+  firebase_core: ^2.24.2
+  firebase_auth: ^4.15.3
+  cloud_firestore: ^4.13.6
+
+  # Network & API
+  http: ^1.1.0
+
+  # Maps & Location
+  # Maps & Location - Self-Resolving Versions
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  geolocator: ^11.0.0
+  flutter_map_location_marker: ^11.0.1   
+  google_maps_flutter: ^2.5.0
+
+  # Features (QR & OTP)
+  mobile_scanner: ^3.5.0
+  pin_code_fields: ^8.0.1
+  permission_handler: ^11.0.0
+
+  # UI & Icons
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
