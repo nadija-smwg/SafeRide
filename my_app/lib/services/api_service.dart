@@ -9,7 +9,7 @@ class ApiService {
   //   • Running on Android emulator              → use http://10.0.2.2:8080
   //   • Running on iOS simulator                 → use http://localhost:8080
   // ─────────────────────────────────────────────────────────────────────────
-  static const String _baseUrl = 'http://172.20.10.5:8080';
+  static const String _baseUrl = 'http://172.20.10.5:8085';
 
   // ---------------------------------------------------------------------------
   // notifyBackend

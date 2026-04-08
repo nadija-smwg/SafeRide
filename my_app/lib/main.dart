@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'screens/role_selection_screen.dart';
+
 import 'screens/auth_wrapper.dart';
+import 'screens/role_selection_screen.dart';
 import 'Driver/welcome_screen.dart';
 import 'Passenger/welcome_screen.dart';
 
@@ -17,8 +18,6 @@ import 'Passenger/forgot_password_screen.dart';
 import 'Driver/otp_screen.dart';
 import 'Passenger/otp_screen.dart';
 
-
-
 import 'Driver/create_password_screen.dart'; 
 import 'Passenger/create_password_screen.dart'; 
 
@@ -32,7 +31,7 @@ void main() async {
   // 2. Start the Firebase engine
   await Firebase.initializeApp(); 
   
-  // 3. Run your app (If your main widget isn't called MyApp, use your widget's name here)
+  // 3. Run your app with the dynamic AuthWrapper
   runApp(const SafeRideApp()); 
 }
 
@@ -59,17 +58,15 @@ class SafeRideApp extends StatelessWidget {
           ),
         ),
       ),
-      initialRoute: '/',
+      home: const AuthWrapper(),
       routes: {
-        '/': (context) => const AuthWrapper(),
+        // We do not define '/' or RoleSelection here because it's handled by 'home'
         '/RoleSelection': (context) => const RoleSelectionScreen(),
-
         '/DriverWelcome': (context) => const DriverWelcomeScreen(),
         '/PassengerWelcome': (context) => const WelcomeScreen(),
         
         '/Driverlogin': (context) => const DriverLoginScreen(),
         '/Passengerlogin': (context) => const LoginScreen(),
-
 
         '/Driverregister': (context) => const DriverRegisterScreen(),
         '/Passengerregister': (context) => const RegisterScreen(),
@@ -79,8 +76,6 @@ class SafeRideApp extends StatelessWidget {
 
         '/Driverotp': (context) => const DriverOtpVerificationScreen(),
         '/otp': (context) => const OtpVerificationScreen(),
-
-
 
         '/Drivercreate_password': (context) => const DriverCreateNewPasswordScreen(),
         '/create_password': (context) => const CreateNewPasswordScreen(),

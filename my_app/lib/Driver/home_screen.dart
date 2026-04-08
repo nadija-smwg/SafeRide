@@ -10,6 +10,7 @@ class DriverHomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false, // Prevents Flutter from automatically adding a back button
         title: const Text('Driver Dashboard', style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.transparent,
         elevation: 0,

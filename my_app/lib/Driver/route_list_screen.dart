@@ -106,18 +106,14 @@ class _RouteListScreenState extends State<RouteListScreen> {
           leading: const CircleAvatar(child: Icon(Icons.person)),
           title: Text(s.fullName),
           subtitle: Text("Status: ${s.status}"),
-          trailing: IconButton(
-            icon: const Icon(Icons.check_circle_outline),
-            onPressed: () async {
-               String nextStatus = s.status == "AT_HOME" ? "IN_TRANSIT" 
-                                  : (s.status == "IN_TRANSIT" ? (widget.isPickup ? "IN_SCHOOL" : "AT_HOME") 
-                                  : "IN_TRANSIT");
-               await driverService.updateStudentStatus(s.id, nextStatus);
-               loadRoute();
-            },
+          trailing: const IconButton(
+            icon: Icon(Icons.check_circle_outline),
+            tooltip: 'Please use the QR Scanner to update status',
+            onPressed: null, // disabled: enforce QR scanning
           ),
         ))
       ],
     );
   }
 }
+

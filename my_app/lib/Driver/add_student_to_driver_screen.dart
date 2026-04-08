@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/driver_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'qr_scanner_screen.dart';
 
 class AddStudentToDriverScreen extends StatefulWidget {
   const AddStudentToDriverScreen({super.key});
@@ -24,10 +25,10 @@ class _AddStudentToDriverScreenState extends State<AddStudentToDriverScreen> {
     if (driverId != null) {
       bool success = await driverService.linkStudent(driverId, studentIdController.text.trim());
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Student linked successfully!')));
-        Navigator.pop(context, true);
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Student linked successfully!')));
+        if (mounted) Navigator.pop(context, true);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to link. Check ID.')));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to link. Check ID.')));
       }
     }
     setState(() => isLoading = false);
@@ -45,13 +46,28 @@ class _AddStudentToDriverScreenState extends State<AddStudentToDriverScreen> {
             const SizedBox(height: 20),
             TextField(
               controller: studentIdController,
-              decoration: const InputDecoration(labelText: 'Student ID', border: OutlineInputBorder()),
+              decoration: InputDecoration(
+                labelText: 'Student ID', 
+                border: const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.qr_code_scanner),
+                  onPressed: () async {
+                    final scannedId = await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const QRScannerScreen()),
+                    );
+                    if (scannedId != null && scannedId is String && scannedId.isNotEmpty) {
+                      studentIdController.text = scannedId;
+                    }
+                  },
+                ),
+              ),
             ),
             const SizedBox(height: 30),
             ElevatedButton(
               onPressed: isLoading ? null : linkStudent,
               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00C2E0), minimumSize: const Size(double.infinity, 50)),
-              child: isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('Link Student'),
+              child: isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('Link Student', style: TextStyle(color: Colors.white)),
             )
           ],
         ),

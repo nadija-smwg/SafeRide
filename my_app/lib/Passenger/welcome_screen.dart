@@ -114,7 +114,13 @@ class WelcomeScreen extends StatelessWidget {
                   color: Colors.black,
                   size: 20,
                 ),
-                onPressed: () => Navigator.pushNamed(context, '/'),
+                onPressed: () {
+                  if (Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  } else {
+                    Navigator.pushReplacementNamed(context, '/RoleSelection');
+                  }
+                },
               ),
             ),
           ],
