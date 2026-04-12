@@ -175,13 +175,15 @@ class _StudentDetailsScreenState extends State<StudentDetailsScreen> {
                   ...currentStudent.weeklySchedule.map((s) => Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4.0),
                     child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        SizedBox(width: 100, child: Text(s.day, style: const TextStyle(fontWeight: FontWeight.bold))),
-                        Expanded(
-                          child: s.availabilityToPickup 
-                            ? Text("${s.pickupLocation} ➔ ${s.dropoffLocation}")
-                            : const Text("Not Needed", style: TextStyle(color: Colors.grey)),
+                        Text(s.day, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(s.needMorningPickup ? 'AM: ${s.morningPickup.name} ➔ ${s.morningDropoff.name}' : 'AM: Skip', style: const TextStyle(color: Colors.black54)),
+                            Text(s.needEveningPickup ? 'PM: ${s.eveningPickup.name} ➔ ${s.eveningDropoff.name}' : 'PM: Skip', style: const TextStyle(color: Colors.black54)),
+                          ],
                         )
                       ],
                     ),

@@ -2,27 +2,63 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'add_student_to_driver_screen.dart';
 import 'route_list_screen.dart';
+import 'driver_profile_screen.dart'; // newly added import
+import 'package:flutter/services.dart';
 
 class DriverHomeScreen extends StatelessWidget {
   const DriverHomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (didPop) return;
+        SystemNavigator.pop();
+      },
+      child: Scaffold(
+        appBar: AppBar(
         automaticallyImplyLeading: false, // Prevents Flutter from automatically adding a back button
         title: const Text('Driver Dashboard', style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.black),
-            onPressed: () async {
-              SharedPreferences prefs = await SharedPreferences.getInstance();
-              prefs.remove('uid');
-              prefs.remove('role');
-              Navigator.pushReplacementNamed(context, '/Driverlogin');
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.account_circle, color: Colors.black, size: 28),
+            onSelected: (value) async {
+              if (value == 'profile') {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const DriverProfileScreen()));
+              } else if (value == 'logout') {
+                SharedPreferences prefs = await SharedPreferences.getInstance();
+                await prefs.remove('uid');
+                await prefs.remove('role');
+                if (!context.mounted) return;
+                Navigator.pushNamedAndRemoveUntil(context, '/Driverlogin', (route) => false);
+              }
             },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'profile',
+                child: Row(
+                  children: [
+                    Icon(Icons.person_outline, color: Colors.black54),
+                    SizedBox(width: 8),
+                    Text('My Profile'),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem<String>(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout, color: Colors.redAccent),
+                    SizedBox(width: 8),
+                    Text('Logout', style: TextStyle(color: Colors.redAccent)),
+                  ],
+                ),
+              ),
+            ],
           )
         ],
       ),
@@ -57,6 +93,7 @@ class DriverHomeScreen extends StatelessWidget {
         backgroundColor: const Color(0xFF00C2E0),
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text('Link Student', style: TextStyle(color: Colors.white)),
+      ),
       ),
     );
   }

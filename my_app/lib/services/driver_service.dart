@@ -72,4 +72,64 @@ class DriverService {
     }
     return null;
   }
+  Future<DriverProfile?> getDriverProfile(String driverId) async {
+    try {
+      final response = await http.get(Uri.parse("$endpoint/drivers/$driverId/profile"));
+      if (response.statusCode == 200) {
+        return DriverProfile.fromJson(jsonDecode(response.body));
+      }
+    } catch (e) {
+      print(e);
+    }
+    return null;
+  }
+
+  Future<bool> updateDriverProfile(String driverId, DriverProfile profileData) async {
+    try {
+      final response = await http.put(
+        Uri.parse("$endpoint/drivers/$driverId/profile"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(profileData.toJson()),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print(e);
+      return false;
+    }
+  }
+}
+
+class DriverProfile {
+  final String? id;
+  final String? fullName;
+  final String? phoneNumber;
+  final String? licenseNumber;
+  final String? vehicleNumber;
+
+  DriverProfile({
+    this.id,
+    this.fullName,
+    this.phoneNumber,
+    this.licenseNumber,
+    this.vehicleNumber,
+  });
+
+  factory DriverProfile.fromJson(Map<String, dynamic> json) {
+    return DriverProfile(
+      id: json['id'],
+      fullName: json['fullName'],
+      phoneNumber: json['phoneNumber'],
+      licenseNumber: json['licenseNumber'],
+      vehicleNumber: json['vehicleNumber'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (fullName != null) 'fullName': fullName,
+      if (phoneNumber != null) 'phoneNumber': phoneNumber,
+      if (licenseNumber != null) 'licenseNumber': licenseNumber,
+      if (vehicleNumber != null) 'vehicleNumber': vehicleNumber,
+    };
+  }
 }

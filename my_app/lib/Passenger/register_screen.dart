@@ -11,6 +11,7 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   // --- SECTION 1: Parent Details ---
+  final TextEditingController fullNameController = TextEditingController();
   final TextEditingController emergencyContactController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
 
@@ -40,7 +41,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> registerParent() async {
     // 1. Validation
-    if (emergencyContactController.text.isEmpty || 
+    if (fullNameController.text.isEmpty ||
+        emergencyContactController.text.isEmpty || 
         addressController.text.isEmpty || 
         emailController.text.isEmpty || 
         usernameController.text.isEmpty || 
@@ -67,6 +69,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         password: passwordController.text.trim(),
         role: 'Parent',
         username: usernameController.text.trim(),
+        fullName: fullNameController.text.trim(),
         phoneNumber: emergencyContactController.text.trim(),
         homeAddress: addressController.text.trim(),
       );
@@ -110,6 +113,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   void dispose() {
+    fullNameController.dispose();
     emergencyContactController.dispose();
     addressController.dispose();
     emailController.dispose();
@@ -151,6 +155,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               // --- SECTION 1 ---
               _sectionHeader("Parent Details"),
+              CustomTextField(hintText: 'Full Name', controller: fullNameController),
               CustomTextField(hintText: 'Phone Number', controller: emergencyContactController),
               CustomTextField(hintText: 'Home Address', controller: addressController),
 

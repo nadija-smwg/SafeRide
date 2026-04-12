@@ -4,6 +4,8 @@ import '../services/student_service.dart';
 import 'add_student_screen.dart';
 import 'student_details_screen.dart';
 import 'live_tracking_screen.dart';
+import 'package:flutter/services.dart';
+import 'parent_profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -45,21 +47,56 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (didPop) return;
+        SystemNavigator.pop();
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+        automaticallyImplyLeading: false, // Prevents back navigation
         title: const Text('My Dashboard', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.black),
-            onPressed: () async {
-              SharedPreferences prefs = await SharedPreferences.getInstance();
-              prefs.remove('uid');
-              prefs.remove('role');
-              if (mounted) Navigator.pushReplacementNamed(context, '/Passengerlogin');
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.account_circle, color: Colors.black, size: 28),
+            onSelected: (value) async {
+              if (value == 'profile') {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const ParentProfileScreen()));
+              } else if (value == 'logout') {
+                SharedPreferences prefs = await SharedPreferences.getInstance();
+                await prefs.remove('uid');
+                await prefs.remove('role');
+                if (!context.mounted) return;
+                Navigator.pushNamedAndRemoveUntil(context, '/Passengerlogin', (route) => false);
+              }
             },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'profile',
+                child: Row(
+                  children: [
+                    Icon(Icons.person_outline, color: Colors.black54),
+                    SizedBox(width: 8),
+                    Text('My Profile'),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem<String>(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout, color: Colors.redAccent),
+                    SizedBox(width: 8),
+                    Text('Logout', style: TextStyle(color: Colors.redAccent)),
+                  ],
+                ),
+              ),
+            ],
           )
         ],
       ),
@@ -148,6 +185,7 @@ class _HomeScreenState extends State<HomeScreen> {
           }
         },
         child: const Icon(Icons.add, color: Colors.white),
+      ),
       ),
     );
   }

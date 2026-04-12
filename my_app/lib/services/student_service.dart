@@ -32,27 +32,44 @@ class Student {
 
 class ScheduleItem {
   String day;
-  String pickupLocation;
-  String dropoffLocation;
-  bool availabilityToPickup;
+  LocationObject morningPickup;
+  LocationObject morningDropoff;
+  bool needMorningPickup;
+  LocationObject eveningPickup;
+  LocationObject eveningDropoff;
+  bool needEveningPickup;
 
-  ScheduleItem({required this.day, required this.pickupLocation, required this.dropoffLocation, required this.availabilityToPickup});
+  ScheduleItem({
+    required this.day, 
+    required this.morningPickup, 
+    required this.morningDropoff, 
+    required this.needMorningPickup, 
+    required this.eveningPickup, 
+    required this.eveningDropoff, 
+    required this.needEveningPickup
+  });
 
   factory ScheduleItem.fromJson(Map<String, dynamic> json) {
     return ScheduleItem(
       day: json['day'] ?? '',
-      pickupLocation: json['pickupLocation'] ?? 'Home',
-      dropoffLocation: json['dropoffLocation'] ?? 'Home',
-      availabilityToPickup: json['availabilityToPickup'] ?? true,
+      morningPickup: json['morningPickup'] != null ? LocationObject.fromJson(json['morningPickup']) : LocationObject(id: '', name: 'Home', lat: 0.0, lng: 0.0, address: ''),
+      morningDropoff: json['morningDropoff'] != null ? LocationObject.fromJson(json['morningDropoff']) : LocationObject(id: '', name: 'School', lat: 0.0, lng: 0.0, address: ''),
+      needMorningPickup: json['needMorningPickup'] ?? true,
+      eveningPickup: json['eveningPickup'] != null ? LocationObject.fromJson(json['eveningPickup']) : LocationObject(id: '', name: 'School', lat: 0.0, lng: 0.0, address: ''),
+      eveningDropoff: json['eveningDropoff'] != null ? LocationObject.fromJson(json['eveningDropoff']) : LocationObject(id: '', name: 'Home', lat: 0.0, lng: 0.0, address: ''),
+      needEveningPickup: json['needEveningPickup'] ?? true,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       "day": day,
-      "pickupLocation": pickupLocation,
-      "dropoffLocation": dropoffLocation,
-      "availabilityToPickup": availabilityToPickup,
+      "morningPickup": morningPickup.toJson(),
+      "morningDropoff": morningDropoff.toJson(),
+      "needMorningPickup": needMorningPickup,
+      "eveningPickup": eveningPickup.toJson(),
+      "eveningDropoff": eveningDropoff.toJson(),
+      "needEveningPickup": needEveningPickup,
     };
   }
 }
@@ -149,5 +166,103 @@ class StudentService {
       print(e);
     }
     return null;
+  }
+  Future<bool> deleteStudent(String studentId) async {
+    try {
+      final response = await http.delete(Uri.parse("$endpoint/$studentId"));
+      return response.statusCode == 200;
+    } catch (e) {
+      print(e);
+      return false;
+    }
+  }
+
+  Future<ParentProfile?> getParentProfile(String parentId) async {
+    try {
+      final response = await http.get(Uri.parse("$endpoint/profile/$parentId"));
+      if (response.statusCode == 200) {
+        return ParentProfile.fromJson(jsonDecode(response.body));
+      }
+    } catch (e) {
+      print(e);
+    }
+    return null;
+  }
+
+  Future<bool> updateParentProfile(String parentId, ParentProfile data) async {
+    try {
+      final response = await http.put(
+        Uri.parse("$endpoint/profile/$parentId"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(data.toJson()),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print(e);
+      return false;
+    }
+  }
+}
+
+class LocationObject {
+  String id;
+  String name;
+  double lat;
+  double lng;
+  String address;
+
+  LocationObject({required this.id, required this.name, required this.lat, required this.lng, required this.address});
+
+  factory LocationObject.fromJson(Map<String, dynamic> json) {
+    return LocationObject(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      lat: (json['lat'] ?? 0.0).toDouble(),
+      lng: (json['lng'] ?? 0.0).toDouble(),
+      address: json['address'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      "id": id,
+      "name": name,
+      "lat": lat,
+      "lng": lng,
+      "address": address,
+    };
+  }
+}
+
+class ParentProfile {
+  final String? id;
+  final String? fullName;
+  final String? phoneNumber;
+  final String? homeAddress;
+  final List<LocationObject>? savedLocations;
+
+  ParentProfile({this.id, this.fullName, this.phoneNumber, this.homeAddress, this.savedLocations});
+
+  factory ParentProfile.fromJson(Map<String, dynamic> json) {
+    List<LocationObject> locs = [];
+    if (json['savedLocations'] != null) {
+      locs = (json['savedLocations'] as List).map((i) => LocationObject.fromJson(i)).toList();
+    }
+    return ParentProfile(
+      id: json['id'],
+      fullName: json['fullName'],
+      phoneNumber: json['phoneNumber'],
+      homeAddress: json['homeAddress'],
+      savedLocations: locs,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (fullName != null) 'fullName': fullName,
+      if (phoneNumber != null) 'phoneNumber': phoneNumber,
+      if (homeAddress != null) 'homeAddress': homeAddress,
+      if (savedLocations != null) 'savedLocations': savedLocations!.map((v) => v.toJson()).toList(),
+    };
   }
 }
